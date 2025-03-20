@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 
@@ -9,14 +9,24 @@ export const ArticleParamsForm = () => {
 
 	const toggle = () => {
 		if (active) {
-			setActive(false); // Закрываем меню, если оно открыто
+			setActive(false);
 		} else {
-			setActive(true); // Открываем меню, если оно закрыто
+			setActive(true);
 		}
 	};
 
+	const asideRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		if (asideRef.current == null) return;
+
+		const { left, top } = asideRef.current.getBoundingClientRect();
+		asideRef.current.style.left = `${left + 120}px`;
+		asideRef.current.style.top = `${top - 20}px`;
+	}, [active]);
+
 	return (
-		<>
+		<div ref={asideRef}>
 			<ArrowButton isOpen={active} onClick={toggle} />
 			<aside className={styles.container}>
 				<form className={styles.form}>
@@ -26,6 +36,6 @@ export const ArticleParamsForm = () => {
 					</div>
 				</form>
 			</aside>
-		</>
+		</div>
 	);
 };
