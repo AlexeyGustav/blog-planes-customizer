@@ -6,6 +6,9 @@ import {
 	fontColors,
 	backgroundColors,
 	contentWidthArr,
+	ArticleStateType,
+	defaultArticleState,
+	IPropsSettings,
 } from '../../constants/articleProps';
 
 import { ArrowButton } from 'src/ui/arrow-button';
@@ -18,111 +21,121 @@ import { Separator } from 'src/ui/separator';
 import clsx from 'clsx';
 import styles from './ArticleParamsForm.module.scss';
 
-export const ArticleParamsForm = () => {
-	const [active, setActive] = useState(false);
+export const ArticleParamsForm = ({
+	articleState,
+	onChange,
+}: IPropsSettings) => {
+	// Cостояние списка
+	const [activeListSettings, setActiveListSettings] = useState(false);
+	// Состояние формы
+	const [activeSettingsForm, setActiveSettingsForm] = useState(articleState);
 
+	// Открыть/закрыть настройки
 	const toggleList = () => {
-		if (active) {
-			setActive(false);
+		if (activeListSettings) {
+			setActiveListSettings(false);
 		} else {
-			setActive(true);
+			setActiveListSettings(true);
 		}
 	};
 
-	const pressСlickOutside = (e: MouseEvent) => {
-		if (asideRef.current && !asideRef.current.contains(e.target as Node)) {
-			toggleList();
-		}
-	};
-
-	const pressEscapeKey = (e: KeyboardEvent) => {
-		if (e.key === 'Escape') {
-			setActive(false);
-		}
-	};
-
+	// Закрыть настройки по кнопке "Esc" и клику вне окна
 	const asideRef = useRef<HTMLDivElement>(null);
 	useEffect(() => {
-		if (!active) return;
-		if (active) {
-			window.addEventListener('click', pressСlickOutside);
+		const pressСlickOutside = (e: MouseEvent) => {
+			if (asideRef.current && !asideRef.current.contains(e.target as Node)) {
+				toggleList();
+			}
+		};
+
+		const pressEscapeKey = (e: KeyboardEvent) => {
+			if (e.key === 'Escape') {
+				setActiveListSettings(false);
+			}
+		};
+
+		if (!activeListSettings) return;
+		if (activeListSettings) {
+			window.addEventListener('mousedown', pressСlickOutside);
 			window.addEventListener('keydown', pressEscapeKey);
 		}
 		return () => {
-			window.removeEventListener('click', pressСlickOutside);
+			window.removeEventListener('mousedown', pressСlickOutside);
 			window.removeEventListener('keydown', pressEscapeKey);
 		};
-	}, [active]);
+	}, [activeListSettings]);
 
-	// Состояние списка названий шрифтов
-	const [selectFont, setSelectFont] = useState(fontFamilyOptions[0]);
-	const handleChangeFont = (selected: OptionType) => {
-		setSelectFont(selected); // Обновляем состояние с выбранным шрифтом
+	// Изменение полей в массиве настроек
+	const handleCange = (field: keyof ArticleStateType, value: OptionType) => {
+		setActiveSettingsForm({ ...activeSettingsForm, [field]: value });
 	};
 
-	// Состояние списка размера шрифтов
-	const [selectSize, setSelectSize] = useState(fontSizeOptions[0]);
+	const handleFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+		e.preventDefault();
+		onChange(activeSettingsForm);
+	};
 
-	// Состояние цвета шрифта
-	const [selectColorFont, setSelectColor] = useState(fontColors[0]);
-
-	// Состояние цвета фона
-	const [selectColorBackground, setSelectColorBackground] = useState(
-		backgroundColors[0]
-	);
-
-	// Состояние ширины контента
-	const [selectwidth, setSelectwidth] = useState(contentWidthArr[0]);
+	// Сброс настроек в первоначальное состояние
+	const handleResetForm = () => {
+		setActiveSettingsForm(defaultArticleState);
+		onChange(defaultArticleState);
+	};
 
 	return (
 		<div ref={asideRef}>
-			<ArrowButton isOpen={active} onClick={toggleList} />
+			<ArrowButton isOpen={activeListSettings} onClick={toggleList} />
 			<aside
-				className={clsx(styles.container, { [styles.container_open]: active })}>
+				className={clsx(styles.container, {
+					[styles.container_open]: activeListSettings,
+				})}
+				onSubmit={handleFormSubmit}
+				onReset={handleResetForm}>
 				<form className={styles.form}>
 					<Text size={31} weight={800} uppercase>
 						Задайте параметры
 					</Text>
 
 					<Select
-						selected={selectFont}
+						selected={activeSettingsForm.fontFamilyOption}
 						options={fontFamilyOptions}
 						title={'Шрифт'}
-						onChange={handleChangeFont}></Select>
+						onChange={(selected) => {
+							handleCange('fontFamilyOption', selected);
+						}}></Select>
 
 					<RadioGroup
-						name={''}
+						name={'--font-size'}
 						options={fontSizeOptions}
-						selected={selectSize}
+						selected={activeSettingsForm.fontSizeOption}
 						title={'Размер шрифта'}
 						onChange={(selected) => {
-							setSelectSize(selected);
+							handleCange('fontSizeOption', selected);
 						}}></RadioGroup>
 
 					<Select
-						selected={selectColorFont}
+						selected={activeSettingsForm.fontColor}
 						options={fontColors}
 						title={'Цвет шрифта'}
 						onChange={(selected) => {
-							setSelectColor(selected);
+							handleCange('fontColor', selected);
 						}}></Select>
 
 					<Separator />
 
 					<Select
-						selected={selectColorBackground}
+						selected={activeSettingsForm.backgroundColor}
 						options={backgroundColors}
 						title={'Цвет фона'}
 						onChange={(selected) => {
-							setSelectColorBackground(selected);
+							handleCange('backgroundColor', selected);
 						}}></Select>
 
 					<Select
-						selected={selectwidth}
+						selected={activeSettingsForm.contentWidth}
 						options={contentWidthArr}
 						title={'Ширина контента'}
 						onChange={(selected) => {
-							setSelectwidth(selected);
+							handleCange('contentWidth', selected);
 						}}></Select>
 
 					<div className={styles.bottomContainer}>
